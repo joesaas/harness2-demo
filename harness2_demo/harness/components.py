@@ -60,8 +60,14 @@ class PromptComponent:
 
     version: int = 1
     clauses: tuple[str, ...] = ()
+    # live 模式用：整份提示词就是一段现成全文（如新闻提示词 v5），
+    # 不再拆成条款。full_text 非空时 render() 直接返回它；
+    # 离线模式 full_text 恒为 None，行为与原来完全一致。
+    full_text: str | None = None
 
     def render(self) -> str:
+        if self.full_text is not None:
+            return self.full_text
         lines = [f"（提示词 v{self.version}）收集最近 2 天 AI Agent 与 Web3 DeFi 协议的技术 / 产品动态："]
         lines += [f"{i}. {c}" for i, c in enumerate(self.clauses, start=1)]
         return "\n".join(lines)
@@ -73,6 +79,10 @@ class PromptComponent:
             version=self.version + 1,
             clauses=self.clauses + tuple(new_clauses),
         )
+
+    def replaced_full_text(self, text: str) -> "PromptComponent":
+        """live 模式的全文修订：版本号 +1，全文整体替换（条款清空）。"""
+        return replace(self, version=self.version + 1, clauses=(), full_text=text)
 
 
 # 各运行时的侧重来源类别（沿用提示词 v5 的运行时侧重表）。

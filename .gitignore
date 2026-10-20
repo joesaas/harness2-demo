@@ -6,3 +6,4 @@ improvement_library.json
 build/
 dist/
 .venv/
+.env

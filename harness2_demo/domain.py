@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 
 # 业务口径：提示词只收录「技术 / 产品事件」，在本场景里落实为这两类。
 EVENT_TYPES = frozenset({"技术事件", "治理提案"})
@@ -60,6 +61,32 @@ class NewsItem:
             and self.hours_ago <= BUSINESS_WINDOW_HOURS
             and self.source_identifiable
         )
+
+
+@dataclass(frozen=True)
+class CandidateItem:
+    """一条真实候选新闻（live 模式从 RSS/Atom 抓取的最小单元）。
+
+    与 NewsItem 的区别：候选只有可观察的元数据（标题 / 摘要 / 链接 /
+    发布时间 / 来源名），没有内容类型与事件分组——它是不是事件、
+    是不是违规，要等执行与 judge 之后才知道，这正是 live 模式
+    与离线 fixture 的根本差别。
+    """
+
+    title: str
+    summary: str  # feed 给的摘要（可能为空；live 语料只有标题 + 摘要级信息）
+    link: str
+    published: datetime | None  # 带时区的发布时间；解析不出为 None
+    source_name: str  # feed 名（如 "CoinDesk"）
+
+
+@dataclass(frozen=True)
+class ViolationExample:
+    """一条违规样例：喂给 LLM 编辑器的证据（标题 + judge 归类 + 理由）。"""
+
+    title: str
+    kind: str  # judge 给的类别：data / trend / funding / price / marketing / opinion / old / other
+    reason: str  # judge 的一句话理由
 
 
 @dataclass(frozen=True)
